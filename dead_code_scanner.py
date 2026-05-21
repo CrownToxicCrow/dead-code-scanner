@@ -147,6 +147,9 @@ def main():
     if not project_path.exists():
         print("Путь не найден.")
         return
+    
+    print("Java Dead Code Scanner")
+    print("======================")
 
     results = scan_project(project_path)
 
