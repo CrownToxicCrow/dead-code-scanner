@@ -1,0 +1,166 @@
+from pathlib import Path
+import re
+import argparse
+
+CODE_PATTERNS = [
+    r"\b(public|private|protected|static|final|class|interface|enum|void|int|long|double|float|boolean|String|new|return|if|else|for|while|switch|case|try|catch|throw)\b",
+    r"[;{}]",
+    r"\w+\s*\([^)]*\)\s*[;{]?",
+    r"\w+\s*=\s*.+;",
+    r"@\w+",
+]
+
+EXCLUDE_DIRS = {
+    ".git", ".idea", ".vscode", "target", "build", "out",
+    "node_modules", "dist", ".gradle"
+}
+
+def looks_like_code(text: str) -> bool:
+    line = text.strip()
+
+    if not line:
+        return False
+
+    # обычные поясняющие комментарии
+    normal_comment_words = [
+        "todo", "fixme", "note", "описание", "пояснение",
+        "пример", "важно", "author", "param", "return", "throws"
+    ]
+
+    lower = line.lower()
+    if any(word in lower for word in normal_comment_words) and not any(x in line for x in [";", "{", "}", "="]):
+        return False
+
+    score = 0
+    for pattern in CODE_PATTERNS:
+        if re.search(pattern, line):
+            score += 1
+
+    # усиливаем уверенность, если строка прям похожа на Java-код
+    if re.search(r"^\s*(public|private|protected|if|for|while|return|try|catch|class)\b", line):
+        score += 2
+
+    return score >= 2
+
+
+def extract_comments_from_java(file_path: Path):
+    results = []
+
+    in_block = False
+    block_start = None
+    block_lines = []
+
+    with file_path.open("r", encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
+
+    for idx, original_line in enumerate(lines, start=1):
+        line = original_line.rstrip("\n")
+
+        if in_block:
+            end_pos = line.find("*/")
+            content = line[:end_pos] if end_pos != -1 else line
+            content = content.strip().lstrip("*").strip()
+            block_lines.append((idx, content))
+
+            if end_pos != -1:
+                suspicious = [
+                    (num, txt) for num, txt in block_lines
+                    if looks_like_code(txt)
+                ]
+
+                if suspicious:
+                    results.append({
+                        "type": "block",
+                        "start": block_start,
+                        "end": idx,
+                        "lines": suspicious
+                    })
+
+                in_block = False
+                block_start = None
+                block_lines = []
+
+            continue
+
+        # ищем //
+        line_comment_pos = line.find("//")
+        block_comment_pos = line.find("/*")
+
+        # если есть // раньше block-comment
+        if line_comment_pos != -1 and (block_comment_pos == -1 or line_comment_pos < block_comment_pos):
+            comment = line[line_comment_pos + 2:].strip()
+            if looks_like_code(comment):
+                results.append({
+                    "type": "line",
+                    "start": idx,
+                    "end": idx,
+                    "lines": [(idx, comment)]
+                })
+
+        # ищем /* ... */
+        if block_comment_pos != -1:
+            end_pos = line.find("*/", block_comment_pos + 2)
+
+            # пропускаем Javadoc как документацию
+            if line[block_comment_pos:block_comment_pos + 3] == "/**":
+                continue
+
+            if end_pos != -1:
+                comment = line[block_comment_pos + 2:end_pos].strip()
+                if looks_like_code(comment):
+                    results.append({
+                        "type": "block",
+                        "start": idx,
+                        "end": idx,
+                        "lines": [(idx, comment)]
+                    })
+            else:
+                in_block = True
+                block_start = idx
+                first_content = line[block_comment_pos + 2:].strip()
+                block_lines = [(idx, first_content)]
+
+    return results
+
+
+def scan_project(project_path: Path):
+    all_results = {}
+
+    for file_path in project_path.rglob("*.java"):
+        if any(part in EXCLUDE_DIRS for part in file_path.parts):
+            continue
+
+        comments = extract_comments_from_java(file_path)
+        if comments:
+            all_results[file_path] = comments
+
+    return all_results
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Find commented-out dead Java code.")
+    parser.add_argument("path", help="Path to Java project")
+    args = parser.parse_args()
+
+    project_path = Path(args.path)
+
+    if not project_path.exists():
+        print("Путь не найден.")
+        return
+
+    results = scan_project(project_path)
+
+    if not results:
+        print("Подозрительно закомментированный код не найден.")
+        return
+
+    for file_path, comments in results.items():
+        print(f"\nФайл: {file_path}")
+        for item in comments:
+            print(f"  Строки {item['start']}-{item['end']} [{item['type']}]")
+            for line_num, text in item["lines"]:
+                print(f"    {line_num}: {text}")
+
+
+if __name__ == "__main__":
+    main()
