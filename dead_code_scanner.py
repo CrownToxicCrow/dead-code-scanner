@@ -12,7 +12,8 @@ CODE_PATTERNS = [
 
 EXCLUDE_DIRS = {
     ".git", ".idea", ".vscode", "target", "build", "out",
-    "node_modules", "dist", ".gradle"
+    "node_modules", "dist", ".gradle", "__pycache__",
+    ".gradle", ".mvn"
 }
 
 def looks_like_code(text: str) -> bool:
@@ -127,7 +128,7 @@ def scan_project(project_path: Path):
     all_results = {}
 
     for file_path in project_path.rglob("*.java"):
-        if any(part in EXCLUDE_DIRS for part in file_path.parts):
+        if any(excluded in file_path.parts for excluded in EXCLUDE_DIRS):
             continue
 
         comments = extract_comments_from_java(file_path)
