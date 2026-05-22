@@ -1,0 +1,38 @@
+Java Dead Code Scanner Report
+=============================
+
+Файл: C:\Users\werty\OneDrive\Рабочий стол\test_project\Test.java
+Строки 8-8 [line]
+Уверенность: 85%
+  8: if(user != null) {
+
+Строки 9-9 [line]
+Уверенность: 45%
+  9: save(user);
+
+Строки 12-15 [block]
+Уверенность: 80%
+private int temp = 5;
+System.out.println(temp);
+
+Файл: C:\Users\werty\OneDrive\Рабочий стол\test_project\v.java
+Строки 35-35 [line]
+Уверенность: 65%
+  35: new Vue({
+
+Строки 41-41 [line]
+Уверенность: 45%
+  41: openOverlay() {
+
+Строки 42-42 [line]
+Уверенность: 40%
+  42: this.showOverlay = true;
+
+Строки 44-44 [line]
+Уверенность: 45%
+  44: handleClose() {
+
+Строки 45-45 [line]
+Уверенность: 40%
+  45: this.showOverlay = false;
+
