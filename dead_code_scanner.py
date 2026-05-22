@@ -173,6 +173,9 @@ def main():
 
     results = scan_project(project_path)
 
+    total_files = len(results)
+    total_fragments = sum(len(comments) for comments in results.values())
+
     save_report(results)
     print("Report saved to report.txt")
 
@@ -192,6 +195,11 @@ def main():
             for line_num, text in item["lines"]:
                 print(f"  {line_num}: {text}")
                 print("========================================\n")
+
+    print("Scan summary")
+    print("============")
+    print(f"Files with dead code: {total_files}")
+    print(f"Dead code fragments: {total_fragments}")
 
 
 if __name__ == "__main__":
