@@ -160,9 +160,15 @@ def main():
     for file_path, comments in results.items():
         print(f"\nФайл: {file_path}")
         for item in comments:
-            print(f"  Строки {item['start']}-{item['end']} [{item['type']}]")
+            print("========================================")
+            print("[DEAD CODE DETECTED]")
+            print(f"File: {file_path}")
+            print(f"Lines: {item['start']}-{item['end']}")
+            print(f"Type: {item['type']}")
+            print("Code:")
             for line_num, text in item["lines"]:
-                print(f"    {line_num}: {text}")
+                print(f"  {line_num}: {text}")
+                print("========================================\n")
 
 
 if __name__ == "__main__":
