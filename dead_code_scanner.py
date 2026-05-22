@@ -152,8 +152,11 @@ def save_report(results, output_path="report.txt"):
             for item in comments:
                 report.write(f"Строки {item['start']}-{item['end']} [{item['type']}]\n")
 
-                for line_num, text in item["lines"]:
-                    report.write(f"  {line_num}: {text}\n")
+                if "snippet" in item:
+                    report.write(item["snippet"] + "\n")
+                else:
+                    for line_num, text in item["lines"]:
+                        report.write(f"  {line_num}: {text}\n")
 
                 report.write("\n")
 
@@ -177,7 +180,7 @@ def main():
     total_fragments = sum(len(comments) for comments in results.values())
 
     save_report(results)
-    print("Report saved to report.txt")
+    print("Отчет сохранен в report.txt")
 
     if not results:
         print("Подозрительно закомментированный код не найден.")
@@ -187,11 +190,11 @@ def main():
         print(f"\nФайл: {file_path}")
         for item in comments:
             print("========================================")
-            print("[DEAD CODE DETECTED]")
-            print(f"File: {file_path}")
-            print(f"Lines: {item['start']}-{item['end']}")
-            print(f"Type: {item['type']}")
-            print("Code:")
+            print("[ОБНАРУЖЕН МЕРТВЫЙ КОД]")
+            print(f"Файл: {file_path}")
+            print(f"Строки: {item['start']}-{item['end']}")
+            print(f"Тип: {item['type']}")
+            print("Код:")
             if "snippet" in item:
                 print(item["snippet"])
             else:
@@ -199,10 +202,10 @@ def main():
                     print(f"  {line_num}: {text}")
             print("========================================\n")
 
-    print("Scan summary")
-    print("============")
-    print(f"Files with dead code: {total_files}")
-    print(f"Dead code fragments: {total_fragments}")
+    print("Сводка сканирования")
+    print("===================")
+    print(f"Файлов с мертвым кодом: {total_files}")
+    print(f"Найдено фрагментов: {total_fragments}")
 
 
 if __name__ == "__main__":
