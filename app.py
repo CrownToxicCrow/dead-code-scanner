@@ -2,7 +2,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 from pathlib import Path
 
-from dead_code_scanner import scan_project, save_report
+from dead_code_scanner import (
+    scan_project,
+    save_report,
+    calculate_confidence
+)
 
 
 def choose_folder():
@@ -38,6 +42,15 @@ def run_scan():
             output_box.insert(tk.END, "[ОБНАРУЖЕН МЕРТВЫЙ КОД]\n")
             output_box.insert(tk.END, f"Строки: {item['start']}-{item['end']}\n")
             output_box.insert(tk.END, f"Тип: {item['type']}\n")
+            confidence = max(
+                calculate_confidence(text)
+                for _, text in item["lines"]
+            )
+
+            output_box.insert(
+                tk.END,
+                f"Уверенность: {confidence}%\n"
+            )
             output_box.insert(tk.END, "Код:\n")
 
             if "snippet" in item:
