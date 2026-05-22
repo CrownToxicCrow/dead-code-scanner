@@ -43,6 +43,26 @@ def looks_like_code(text: str) -> bool:
 
     return score >= 2
 
+def calculate_confidence(text: str) -> int:
+    line = text.strip()
+    score = 0
+
+    if not line:
+        return 0
+
+    if re.search(r"\b(public|private|protected|class|interface|enum|void|int|String|boolean|return|if|for|while|try|catch|new)\b", line):
+        score += 40
+
+    if re.search(r"[;{}]", line):
+        score += 25
+
+    if re.search(r"\w+\s*\([^)]*\)", line):
+        score += 20
+
+    if re.search(r"\w+\s*=\s*.+", line):
+        score += 15
+
+    return min(score, 100)
 
 def extract_comments_from_java(file_path: Path):
     results = []
@@ -194,6 +214,8 @@ def main():
             print(f"Файл: {file_path}")
             print(f"Строки: {item['start']}-{item['end']}")
             print(f"Тип: {item['type']}")
+            confidence = max(calculate_confidence(text) for _, text in item["lines"])
+            print(f"Уверенность: {confidence}%")
             print("Код:")
             if "snippet" in item:
                 print(item["snippet"])
