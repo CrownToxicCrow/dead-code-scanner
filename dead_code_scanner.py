@@ -172,6 +172,9 @@ def save_report(results, output_path="report.txt"):
             for item in comments:
                 report.write(f"Строки {item['start']}-{item['end']} [{item['type']}]\n")
 
+                confidence = max(calculate_confidence(text) for _, text in item["lines"])
+                report.write(f"Уверенность: {confidence}%\n")
+
                 if "snippet" in item:
                     report.write(item["snippet"] + "\n")
                 else:
