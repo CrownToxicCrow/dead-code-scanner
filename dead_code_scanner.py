@@ -74,7 +74,8 @@ def extract_comments_from_java(file_path: Path):
                         "type": "block",
                         "start": block_start,
                         "end": idx,
-                        "lines": suspicious
+                        "lines": suspicious,
+                        "snippet": "\n".join(text for _, text in suspicious)
                     })
 
                 in_block = False
@@ -122,7 +123,6 @@ def extract_comments_from_java(file_path: Path):
                 block_lines = [(idx, first_content)]
 
     return results
-
 
 def scan_project(project_path: Path):
     all_results = {}
@@ -192,9 +192,12 @@ def main():
             print(f"Lines: {item['start']}-{item['end']}")
             print(f"Type: {item['type']}")
             print("Code:")
-            for line_num, text in item["lines"]:
-                print(f"  {line_num}: {text}")
-                print("========================================\n")
+            if "snippet" in item:
+                print(item["snippet"])
+            else:
+                for line_num, text in item["lines"]:
+                    print(f"  {line_num}: {text}")
+            print("========================================\n")
 
     print("Scan summary")
     print("============")
