@@ -136,6 +136,25 @@ def scan_project(project_path: Path):
 
     return all_results
 
+def save_report(results, output_path="report.txt"):
+    with open(output_path, "w", encoding="utf-8") as report:
+        report.write("Java Dead Code Scanner Report\n")
+        report.write("=============================\n\n")
+
+        if not results:
+            report.write("Подозрительно закомментированный код не найден.\n")
+            return
+
+        for file_path, comments in results.items():
+            report.write(f"Файл: {file_path}\n")
+
+            for item in comments:
+                report.write(f"Строки {item['start']}-{item['end']} [{item['type']}]\n")
+
+                for line_num, text in item["lines"]:
+                    report.write(f"  {line_num}: {text}\n")
+
+                report.write("\n")
 
 def main():
     parser = argparse.ArgumentParser(description="Find commented-out dead Java code.")
@@ -152,6 +171,9 @@ def main():
     print("======================")
 
     results = scan_project(project_path)
+
+    save_report(results)
+    print("Report saved to report.txt")
 
     if not results:
         print("Подозрительно закомментированный код не найден.")
