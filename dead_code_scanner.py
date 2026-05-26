@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 import argparse
+import shutil
 
 CODE_PATTERNS = [
     r"\b(public|private|protected|static|final|class|interface|enum|void|int|long|double|float|boolean|String|new|return|if|else|for|while|switch|case|try|catch|throw)\b",
@@ -157,6 +158,36 @@ def scan_project(project_path: Path):
 
     return all_results
 
+def clean_dead_code(file_path: Path, comments):
+    backup_path = file_path.with_suffix(file_path.suffix + ".bak")
+    shutil.copy(file_path, backup_path)
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+    lines_to_remove = set()
+    for item in comments:
+        for i in range(item["start"] - 1, item["end"]):
+            lines_to_remove.add(i)
+
+    filtered_lines = [line for i, line in enumerate(lines) if i not in lines_to_remove]
+
+    final_lines = []
+    empty_count = 0
+    
+    for line in filtered_lines:
+        if line.strip() == "":
+            empty_count += 1
+            if empty_count <= 1:
+                final_lines.append(line)
+        else:
+            empty_count = 0
+            final_lines.append(line)
+
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.writelines(final_lines)
+
+    print(f"[CLEANED] {file_path}")
+
 def save_report(results, output_path="report.txt"):
     with open(output_path, "w", encoding="utf-8") as report:
         report.write("Java Dead Code Scanner Report\n")
@@ -199,6 +230,9 @@ def main():
 
     results = scan_project(project_path)
 
+    for file_path, comments in results.items():
+        clean_dead_code(file_path, comments)
+
     total_files = len(results)
     total_fragments = sum(len(comments) for comments in results.values())
 
@@ -232,6 +266,14 @@ def main():
     print(f"Файлов с мертвым кодом: {total_files}")
     print(f"Найдено фрагментов: {total_fragments}")
 
+def restore_from_backup(project_path: Path):
+    restored_count = 0
+    for backup_file in project_path.rglob("*.bak"):
+        original_file = backup_file.with_suffix(backup_file.suffix.replace(".bak", ""))
+        if original_file.exists():
+            shutil.move(str(backup_file), str(original_file))
+            restored_count += 1
+    return restored_count
 
 if __name__ == "__main__":
     main()
